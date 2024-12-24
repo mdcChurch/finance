@@ -40,7 +40,7 @@ def _add_date_to_image_in_memory(image_path, user_text):
         x = 30  # 왼쪽 여백
         y = img.height - text_height - 30  # 이미지 높이에서 텍스트 높이와 하단 여백을 뺌
 
-        draw.text((x, y), user_text, fill="black", font=font)
+        draw.text((x, y), user_text, fill="red", font=font)
 
         # 이미지를 PDF로 변환하여 메모리 버퍼에 저장
         output = BytesIO()
@@ -110,6 +110,7 @@ def _add_date_to_pdf_in_memory(input_pdf, user_text, position=(50, 50)):
         # 텍스트 오버레이 생성
         packet = BytesIO()
         c = canvas.Canvas(packet, pagesize=(page.mediabox.width, page.mediabox.height))
+        c.setFillColor("red")
         c.drawString(position[0], position[1], user_text)
         c.save()
 
