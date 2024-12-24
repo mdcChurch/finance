@@ -3,9 +3,11 @@ from PIL import Image, ImageDraw, ImageFont
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from io import BytesIO
 
-FILE_SAVE_PATH = '/Users/kakao/dev/finance/test'
-OUTPUT_PATH = '/Users/kakao/dev/finance/test/result'
-OUTPUT_PDF_PATH = '/Users/kakao/dev/finance/test/result/combined.pdf'
+from reportlab.pdfgen import canvas
+
+FILE_SAVE_PATH = '/Users/kakao/dev/finance/files'
+OUTPUT_PATH = '/Users/kakao/dev/finance/files/result'
+OUTPUT_PDF_PATH = '/Users/kakao/dev/finance/files/result/combined.pdf'
 
 
 def _add_date_to_image_in_memory(image_path, user_text):
@@ -34,9 +36,9 @@ def _add_date_to_image_in_memory(image_path, user_text):
         text_width = text_bbox[2] - text_bbox[0]
         text_height = text_bbox[3] - text_bbox[1]
 
-        # 텍스트 위치 설정 (오른쪽 하단)
-        x = img.width - text_width - 30
-        y = img.height - text_height - 30
+        # 텍스트 위치 설정 (왼쪽 하단)
+        x = 30  # 왼쪽 여백
+        y = img.height - text_height - 30  # 이미지 높이에서 텍스트 높이와 하단 여백을 뺌
 
         draw.text((x, y), user_text, fill="black", font=font)
 
@@ -45,32 +47,6 @@ def _add_date_to_image_in_memory(image_path, user_text):
         img.save(output, format="PDF")
         output.seek(0)
         return output
-
-
-def _add_date_to_pdf_in_memory(input_pdf, user_text):
-    """
-    PDF에 날짜 텍스트를 추가하고, 메모리 상에서 처리.
-
-    Args:
-        input_pdf (str): 원본 PDF 파일 경로.
-        user_text (str): 삽입할 날짜 텍스트.
-
-    Returns:
-        BytesIO: 수정된 PDF를 저장한 BytesIO 객체.
-    """
-    output = BytesIO()
-    writer = PdfWriter()
-
-    # 원본 PDF 읽기
-    reader = PdfReader(input_pdf)
-    for page in reader.pages:
-        # 텍스트 추가 (PyPDF2는 직접 텍스트 추가를 지원하지 않으므로 스킵)
-        writer.add_page(page)
-
-    # 수정된 PDF를 메모리로 저장
-    writer.write(output)
-    output.seek(0)
-    return output
 
 
 def merge_files_to_pdf(directory, output_pdf):
@@ -86,6 +62,7 @@ def merge_files_to_pdf(directory, output_pdf):
     try:
         # 디렉터리에 있는 파일 순서대로 정렬
         for file_name in sorted(os.listdir(directory)):
+            print(f"Processing file: {file_name}")
             file_path = os.path.join(directory, file_name)
             date = file_name.split("-")[0]
 
@@ -109,6 +86,46 @@ def merge_files_to_pdf(directory, output_pdf):
         print(f"An error occurred: {e}")
     finally:
         merger.close()
+
+
+def _add_date_to_pdf_in_memory(input_pdf, user_text, position=(50, 50)):
+    """
+    기존 PDF에 텍스트를 추가하고, 메모리 상에서 처리.
+
+    Args:
+        input_pdf (str): 원본 PDF 파일 경로.
+        user_text (str): 추가할 텍스트.
+        position (tuple): 텍스트 위치 (x, y 좌표).
+
+    Returns:
+        BytesIO: 텍스트가 추가된 PDF를 저장한 BytesIO 객체.
+    """
+    output = BytesIO()
+    writer = PdfWriter()
+
+    # 원본 PDF 읽기
+    reader = PdfReader(input_pdf)
+
+    for page in reader.pages:
+        # 텍스트 오버레이 생성
+        packet = BytesIO()
+        c = canvas.Canvas(packet, pagesize=(page.mediabox.width, page.mediabox.height))
+        c.drawString(position[0], position[1], user_text)
+        c.save()
+
+        # 새 텍스트를 PDF로 변환
+        packet.seek(0)
+        overlay_pdf = PdfReader(packet)
+        overlay_page = overlay_pdf.pages[0]
+
+        # 기존 페이지와 오버레이 병합
+        page.merge_page(overlay_page)
+        writer.add_page(page)
+
+    # 결과 PDF를 메모리에 저장
+    writer.write(output)
+    output.seek(0)
+    return output
 
 
 if __name__ == "__main__":
