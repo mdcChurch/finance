@@ -9,7 +9,6 @@ from googleapiclient.http import MediaIoBaseDownload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import os
-import io
 import pickle
 
 # 인증 및 Google Drive API 서비스 초기화
@@ -18,6 +17,7 @@ SCOPES_SHEETS = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 CREDENTIAL_PATH = '/Users/kakao/dev/finance/secret/credential.json'
 RECEIPT_SHEETS_ID = '1eFgcLV_mOkFlu92jOaq86lwrtzt3qvoUsLG9vT58KwE'
 RECEIPT_SHEETS_PAGE = '설문지 응답 시트1'
+FILE_SAVE_PATH = '/Users/kakao/dev/finance/files'
 
 
 def _authenticate_drive():
@@ -162,9 +162,8 @@ def downloader_from_sheet(data):
             else:
                 raise ValueError(f"[downloader_from_sheet] Invalid URL, {url}")
 
-            save_dir = "/Users/kakao/dev/finance/files"
-            file_path = f"{save_dir}/{d[2]}-{d[0]}-{idx}"
-            _download_file(file_id, save_dir, file_path)
+            file_path = f"{FILE_SAVE_PATH}/{d[2]}-{d[0]}-{idx}"
+            _download_file(file_id, FILE_SAVE_PATH, file_path)
 
 
 if __name__ == '__main__':
