@@ -27,7 +27,7 @@ def _add_date_to_image_in_memory(image_path, user_text):
 
         # 폰트 설정
         try:
-            font = ImageFont.truetype("/Library/Fonts/Arial Unicode.ttf", size=40)  # mac OS 폰트를 명시적으로 지정
+            font = ImageFont.truetype("/Library/Fonts/Arial Unicode.ttf", size=25)  # mac OS 폰트를 명시적으로 지정
         except OSError:
             font = ImageFont.load_default()  # 기본 폰트로 대체
 
@@ -64,16 +64,17 @@ def merge_files_to_pdf(directory, output_pdf):
         for file_name in sorted(os.listdir(directory)):
             print(f"Processing file: {file_name}")
             file_path = os.path.join(directory, file_name)
-            date = file_name.split("-")[0]
+            # date = file_name.split("-")[0]
+            idx = '-'.join(file_name.split('-')[:-1])
 
             # PDF 파일 처리
             if file_name.endswith(".pdf"):
-                updated_pdf = _add_date_to_pdf_in_memory(file_path, date)
+                updated_pdf = _add_date_to_pdf_in_memory(file_path, idx)
                 merger.append(updated_pdf)
 
             # 이미지 파일 처리 (JPEG, PNG)
             elif file_name.lower().endswith((".jpeg", ".jpg", ".png")):
-                updated_image_pdf = _add_date_to_image_in_memory(file_path, date)
+                updated_image_pdf = _add_date_to_image_in_memory(file_path, idx)
                 merger.append(updated_image_pdf)
 
         # 병합된 PDF 저장
