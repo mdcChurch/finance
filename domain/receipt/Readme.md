@@ -3,6 +3,11 @@
 - google drive 에 저장된 url 을 읽어서 저장 
 - pdf, jpeg, png 파일을 하나의 pdf 파일로 합치기  
 
+## 외부 의존성 
+
+- google sheets api 
+- google drive api 
+
 
 ## 필요 기능 
 
