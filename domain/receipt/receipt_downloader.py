@@ -3,6 +3,7 @@
 2. google drive 에서 url 을 읽어서 pdf, jpeg, png 파일로 local 에 저장
 """
 import re
+import sys
 
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
@@ -90,6 +91,8 @@ def _download_file(fid, d_path, f_path):
         print(f"File saved to {file_save_path}")
     except Exception as e:
         print(f"An error occurred: {e}")
+        sys.exit(1)
+
 
 
 def read_sheet(sheet_id, range_name):
@@ -105,7 +108,9 @@ def read_sheet(sheet_id, range_name):
         return values
 
 
-def sheet_to_array(data):
+# TODO : 갖고 있는 기능(1~4)을 모두 함수로 분리하는게 좋을듯
+# raw 한 데이터 구조에서 필요한 column 을 뽑는다
+def select_columns(data):
     # ["구매내역", "청구비용", "결재일자", "URL"]
     selected_data = [[d[3], d[4], d[6], d[2]] for d in data[1:]]
 
@@ -133,14 +138,18 @@ def sheet_to_array(data):
     for i in range(len(selected_data)):
         selected_data[i][1] = int(re.sub(r'[원,A-Za-z]', '', selected_data[i][1]))
 
-    # 헤더 더하기
+    # 3. 파일 이름에 / 들어간거 제거
+    for i in range(len(selected_data)):
+        selected_data[i][0] = selected_data[i][0].replace('/', '')
+
+    # 4. 헤더 더하기
     headers = ["구매내역", "청구비용", "결재일자", "URL"]
     selected_data.insert(0, headers)
 
     return selected_data
 
 
-def downloader_from_sheet(data):
+def download_to_local(data):
     for d in data[1:]:
         # case1. id 뒤에 fileId 가 있는 경우 'https://drive.google.com/open?id=abc'
         # case2. /d/ 뒤에 fileId 가 있는 경우 'https://drive.google.com/d/abc'
@@ -168,5 +177,5 @@ def downloader_from_sheet(data):
 
 if __name__ == '__main__':
     sheet_raw = read_sheet(RECEIPT_SHEETS_ID, RECEIPT_SHEETS_PAGE)
-    sheet_data = sheet_to_array(sheet_raw)
-    downloader_from_sheet(sheet_data)
+    selected_data = select_columns(sheet_raw)
+    download_to_local(selected_data)
