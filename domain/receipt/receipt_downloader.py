@@ -21,6 +21,7 @@ RECEIPT_SHEETS_PAGE = '설문지 응답 시트1'
 FILE_SAVE_PATH = '/Users/kakao/dev/finance/files'
 
 
+# TODO 중복 코드 제거 필요 (인증 부분)
 def _authenticate_drive():
     creds = None
     if os.path.exists('token-for-drive.pickle'):
@@ -94,7 +95,6 @@ def _download_file(fid, d_path, f_path):
         sys.exit(1)
 
 
-
 def read_sheet(sheet_id, range_name):
     service = _authenticate_sheets()
     sheet = service.spreadsheets()
@@ -111,8 +111,8 @@ def read_sheet(sheet_id, range_name):
 # TODO : 갖고 있는 기능(1~4)을 모두 함수로 분리하는게 좋을듯
 # raw 한 데이터 구조에서 필요한 column 을 뽑는다
 def select_columns(data):
-    # ["구매내역", "청구비용", "결재일자", "URL"]
-    selected_data = [[d[3], d[4], d[6], d[2]] for d in data[1:]]
+    # ["구매내역", "청구비용", "결재일자", "URL", "비고"]
+    selected_data = [[d[3], d[4], d[6], d[2], d[8]] for d in data[1:]]
 
     # 1. 날짜 전처리
     # yyyy.mm.dd 형식 결재 일자 기준으로 sort
@@ -143,12 +143,16 @@ def select_columns(data):
         selected_data[i][0] = selected_data[i][0].replace('/', '')
 
     # 4. 헤더 더하기
-    headers = ["구매내역", "청구비용", "결재일자", "URL"]
+    headers = ["구매내역", "청구비용", "결재일자", "URL", "비고"]
     selected_data.insert(0, headers)
 
     return selected_data
 
 
+"""
+data 를 local 에 저장한다. 
+파일 이름은 '결재일자-비고-구매내역-인덱스' 로 저장한다.
+"""
 def download_to_local(data):
     for d in data[1:]:
         # case1. id 뒤에 fileId 가 있는 경우 'https://drive.google.com/open?id=abc'
@@ -171,7 +175,7 @@ def download_to_local(data):
             else:
                 raise ValueError(f"[downloader_from_sheet] Invalid URL, {url}")
 
-            file_path = f"{FILE_SAVE_PATH}/{d[2]}-{d[0]}-{idx}"
+            file_path = f"{FILE_SAVE_PATH}/{d[2]}-{d[4]}-{d[0]}-{idx}"
             _download_file(file_id, FILE_SAVE_PATH, file_path)
 
 
